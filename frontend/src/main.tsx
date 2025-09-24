@@ -6,10 +6,14 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import Login from './pages/Login'
 import Apartments from './pages/Apartments'
 import ProtectedRoute from './auth/ProtectedRoute'
+import Clients from './pages/Clients'
+import Sales from './pages/Sales'
 
 const router = createBrowserRouter([
   { path: '/login', element: <Login /> },
   { path: '/', element: <ProtectedRoute><Apartments /></ProtectedRoute> },
+  { path: '/clients', element: <ProtectedRoute><Clients /></ProtectedRoute> },
+  { path: '/sales', element: <ProtectedRoute><Sales /></ProtectedRoute> },
 ])
 
 createRoot(document.getElementById('root')!).render(

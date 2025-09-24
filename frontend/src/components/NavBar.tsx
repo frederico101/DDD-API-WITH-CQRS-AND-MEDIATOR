@@ -12,6 +12,8 @@ export default function NavBar() {
       <div className="navbar__brand">Direcional Imobiliária</div>
       <nav className="navbar__links">
         <Link className={`navlink ${isActive('/')}`} to="/">Apartamentos</Link>
+        <Link className={`navlink ${isActive('/clients')}`} to="/clients">Clientes</Link>
+        <Link className={`navlink ${isActive('/sales')}`} to="/sales">Vendas</Link>
       </nav>
       <div className="navbar__actions">
         <button className="btn btn--ghost" onClick={logout}>Sair</button>
