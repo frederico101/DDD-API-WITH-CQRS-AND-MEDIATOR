@@ -6,7 +6,7 @@ services:
     platform: linux/amd64
     environment:
       - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=Your_password123
+      - MSSQL_SA_PASSWORD=myStrongP4ss*
     ports:
       - "1433:1433"
     healthcheck:
@@ -27,10 +27,10 @@ services:
       dockerfile: Direcional.Api/Dockerfile
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__SqlServer=Server=sqlserver,1433;Database=DirecionalDb;User Id=sa;Password=Your_password123;Encrypt=False;TrustServerCertificate=True
+      - ConnectionStrings__SqlServer=Server=sqlserver,1433;Database=DirecionalDb;User Id=sa;Password=myStrongP4ss*;Encrypt=False;TrustServerCertificate=True
       - Jwt__Issuer=Direcional
       - Jwt__Audience=DirecionalAudience
-      - Jwt__Key=super_secret_jwt_signing_key_change_me
+      - Jwt__Key=pQ3w6Yt9B2e5H8k1N4r7U0x3A6z9C2v5M8q1L4t7W0y3R6u9
       - RabbitMQ__Host=rabbitmq
     depends_on:
       sqlserver:
@@ -39,5 +39,18 @@ services:
         condition: service_started
     ports:
       - "8080:8080"
+
+  frontend:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    environment:
+      - VITE_PROXY_TARGET=http://api:8080
+    command: sh -c "npm ci || npm i && npm run dev -- --host --port 5173"
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
 
 

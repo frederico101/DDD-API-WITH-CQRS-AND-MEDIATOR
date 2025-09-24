@@ -6,14 +6,14 @@ namespace Direcional.Application.Clients;
 
 public static class DeleteClient
 {
-    public record Command(Guid Id) : IRequest;
+    public record DeleteClientCommand(Guid Id) : IRequest;
 
-    public class Handler : IRequestHandler<Command, Unit>
+    public class Handler : IRequestHandler<DeleteClientCommand, Unit>
     {
         private readonly IAppDbContext _db;
         public Handler(IAppDbContext db) => _db = db;
 
-        public async Task<Unit> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Unit> Handle(DeleteClientCommand request, CancellationToken cancellationToken)
         {
             var entity = await _db.Clients.FirstOrDefaultAsync(c => c.Id == request.Id, cancellationToken)
                          ?? throw new KeyNotFoundException("Client not found");

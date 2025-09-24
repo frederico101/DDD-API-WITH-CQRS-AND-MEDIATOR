@@ -7,9 +7,9 @@ namespace Direcional.Application.Clients;
 
 public static class UpdateClient
 {
-    public record Command(Guid Id, string Name, string Email, string Document, string? Phone) : IRequest;
+    public record UpdateClientCommand(Guid Id, string Name, string Email, string Document, string? Phone) : IRequest;
 
-    public class Validator : AbstractValidator<Command>
+    public class Validator : AbstractValidator<UpdateClientCommand>
     {
         public Validator()
         {
@@ -21,12 +21,12 @@ public static class UpdateClient
         }
     }
 
-    public class Handler : IRequestHandler<Command, Unit>
+    public class Handler : IRequestHandler<UpdateClientCommand, Unit>
     {
         private readonly IAppDbContext _db;
         public Handler(IAppDbContext db) => _db = db;
 
-        public async Task<Unit> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Unit> Handle(UpdateClientCommand request, CancellationToken cancellationToken)
         {
             var entity = await _db.Clients.FirstOrDefaultAsync(c => c.Id == request.Id, cancellationToken)
                          ?? throw new KeyNotFoundException("Client not found");

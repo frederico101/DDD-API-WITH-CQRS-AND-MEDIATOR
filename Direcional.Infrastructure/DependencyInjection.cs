@@ -2,6 +2,7 @@ using Direcional.Application.Abstractions;
 using Direcional.Infrastructure.Persistence;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,17 +16,33 @@ public static class DependencyInjection
 
         services.AddDbContext<AppDbContext>(options =>
         {
-            options.UseSqlServer(connectionString);
+            var env = configuration["ASPNETCORE_ENVIRONMENT"];
+            if (string.Equals(env, "Testing", StringComparison.OrdinalIgnoreCase))
+            {
+                options.UseInMemoryDatabase("TestDb");
+            }
+            else
+            {
+                options.UseSqlServer(connectionString);
+            }
         });
 
         services.AddHealthChecks();
 
         services.AddMassTransit(x =>
         {
+            x.SetKebabCaseEndpointNameFormatter();
+
+            // Register consumers so queues are created and messages are visible in RabbitMQ
+            x.AddConsumers(typeof(DependencyInjection).Assembly);
+
             x.UsingRabbitMq((context, cfg) =>
             {
                 var host = configuration["RabbitMQ:Host"] ?? "rabbitmq";
                 cfg.Host(host, "/", h => { });
+
+                // Auto-configure receive endpoints for all registered consumers
+                cfg.ConfigureEndpoints(context);
             });
         });
 
