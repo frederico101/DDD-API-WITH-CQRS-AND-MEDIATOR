@@ -10,11 +10,13 @@ public static class SaleEndpoints
     {
         var group = app.MapGroup("/sales").RequireAuthorization();
 
-        group.MapPost("/", async (ConfirmSale.Command cmd, ISender sender) =>
+        group.MapPost("/", async (ConfirmSale.ConfirmSaleCommand cmd, ISender sender) =>
         {
             var result = await sender.Send(cmd);
             return Results.Created($"/sales/{result.Id}", result);
-        });
+        })
+        .WithTags("Sales")
+        .WithOpenApi();
 
         return app;
     }

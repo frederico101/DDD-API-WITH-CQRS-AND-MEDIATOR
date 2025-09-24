@@ -14,26 +14,34 @@ public static class ClientEndpoints
         {
             var result = await sender.Send(new GetClients.Query(page, pageSize, search));
             return Results.Ok(result);
-        });
+        })
+        .WithTags("Clients")
+        .WithOpenApi();
 
-        group.MapPost("/", async (CreateClient.Command cmd, ISender sender) =>
+        group.MapPost("/", async (CreateClient.CreateClientCommand cmd, ISender sender) =>
         {
             var result = await sender.Send(cmd);
             return Results.Created($"/clients/{result.Id}", result);
-        });
+        })
+        .WithTags("Clients")
+        .WithOpenApi();
 
-        group.MapPut("/{id:guid}", async (Guid id, UpdateClient.Command body, ISender sender) =>
+        group.MapPut("/{id:guid}", async (Guid id, UpdateClient.UpdateClientCommand body, ISender sender) =>
         {
             var cmd = body with { Id = id };
             await sender.Send(cmd);
             return Results.NoContent();
-        });
+        })
+        .WithTags("Clients")
+        .WithOpenApi();
 
         group.MapDelete("/{id:guid}", async (Guid id, ISender sender) =>
         {
-            await sender.Send(new DeleteClient.Command(id));
+            await sender.Send(new DeleteClient.DeleteClientCommand(id));
             return Results.NoContent();
-        });
+        })
+        .WithTags("Clients")
+        .WithOpenApi();
 
         return app;
     }

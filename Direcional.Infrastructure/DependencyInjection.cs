@@ -22,10 +22,18 @@ public static class DependencyInjection
 
         services.AddMassTransit(x =>
         {
+            x.SetKebabCaseEndpointNameFormatter();
+
+            // Register consumers so queues are created and messages are visible in RabbitMQ
+            x.AddConsumers(typeof(DependencyInjection).Assembly);
+
             x.UsingRabbitMq((context, cfg) =>
             {
                 var host = configuration["RabbitMQ:Host"] ?? "rabbitmq";
                 cfg.Host(host, "/", h => { });
+
+                // Auto-configure receive endpoints for all registered consumers
+                cfg.ConfigureEndpoints(context);
             });
         });
 

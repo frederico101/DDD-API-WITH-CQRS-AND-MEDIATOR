@@ -13,10 +13,10 @@ namespace Direcional.Application.Auth;
 
 public static class Login
 {
-    public record Command(string Username, string Password) : IRequest<Result>;
-    public record Result(string AccessToken);
+    public record LoginCommand(string Username, string Password) : IRequest<LoginResult>;
+    public record LoginResult(string AccessToken);
 
-    public class Validator : AbstractValidator<Command>
+    public class Validator : AbstractValidator<LoginCommand>
     {
         public Validator()
         {
@@ -25,7 +25,7 @@ public static class Login
         }
     }
 
-    public class Handler : IRequestHandler<Command, Result>
+    public class Handler : IRequestHandler<LoginCommand, LoginResult>
     {
         private readonly IAppDbContext _db;
         private readonly IConfiguration _config;
@@ -36,7 +36,7 @@ public static class Login
             _config = config;
         }
 
-        public async Task<Result> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<LoginResult> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
             var user = await _db.Users.FirstOrDefaultAsync(x => x.Username == request.Username, cancellationToken);
             if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
@@ -62,7 +62,7 @@ public static class Login
                 signingCredentials: creds);
 
             var accessToken = new JwtSecurityTokenHandler().WriteToken(token);
-            return new Result(accessToken);
+            return new LoginResult(accessToken);
         }
     }
 }
