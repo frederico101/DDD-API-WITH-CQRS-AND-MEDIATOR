@@ -64,6 +64,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 
+// CORS for frontend
+const string CorsPolicy = "Frontend";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(CorsPolicy, p => p
+        .AllowAnyOrigin()
+        .AllowAnyHeader()
+        .AllowAnyMethod());
+});
+
 builder.Services.AddMediatR(typeof(Direcional.Application.Abstractions.IAppDbContext).Assembly);
 builder.Services.AddValidatorsFromAssembly(typeof(Direcional.Application.Abstractions.IAppDbContext).Assembly);
 
@@ -76,6 +86,34 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseSerilogRequestLogging();
+// CORS must run before auth so 401 responses include CORS headers
+app.UseCors(CorsPolicy);
+
+// Harden preflight handling: respond 200 with CORS headers for any OPTIONS
+app.Use(async (context, next) =>
+{
+    if (string.Equals(context.Request.Method, "OPTIONS", StringComparison.OrdinalIgnoreCase))
+    {
+        var origin = context.Request.Headers["Origin"].ToString();
+        if (!string.IsNullOrEmpty(origin))
+        {
+            context.Response.Headers["Access-Control-Allow-Origin"] = origin;
+            context.Response.Headers["Vary"] = "Origin";
+        }
+        else
+        {
+            context.Response.Headers["Access-Control-Allow-Origin"] = "*";
+        }
+        var reqHeaders = context.Request.Headers["Access-Control-Request-Headers"].ToString();
+        var reqMethod = context.Request.Headers["Access-Control-Request-Method"].ToString();
+        context.Response.Headers["Access-Control-Allow-Headers"] = string.IsNullOrEmpty(reqHeaders) ? "*" : reqHeaders;
+        context.Response.Headers["Access-Control-Allow-Methods"] = string.IsNullOrEmpty(reqMethod) ? "GET,POST,PUT,DELETE,OPTIONS" : reqMethod;
+        context.Response.StatusCode = StatusCodes.Status200OK;
+        await context.Response.CompleteAsync();
+        return;
+    }
+    await next();
+});
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -98,6 +136,16 @@ Direcional.Api.Endpoints.ClientEndpoints.MapClients(app);
 Direcional.Api.Endpoints.ApartmentEndpoints.MapApartments(app);
 Direcional.Api.Endpoints.ReservationEndpoints.MapReservations(app);
 Direcional.Api.Endpoints.SaleEndpoints.MapSales(app);
+
+// Handle CORS preflight (OPTIONS) for all routes
+app.MapMethods("/{**any}", new[] { "OPTIONS" }, () => Results.Ok())
+   .AllowAnonymous()
+   .RequireCors(CorsPolicy);
+
+// Explicit preflight for login to avoid 405 from route matching
+app.MapMethods("/auth/login", new[] { "OPTIONS" }, () => Results.Ok())
+   .AllowAnonymous()
+   .RequireCors(CorsPolicy);
 
 // Dev-only: trigger data seed (requires auth)
 app.MapPost("/dev/seed", (AppDbContext db) =>
