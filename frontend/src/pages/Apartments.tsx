@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
+import NavBar from '../components/NavBar';
 
 type Apartment = { id: string; code: string; block: string; floor: number; number: number; price: number; status: number };
 type Paged<T> = { total: number; items: T[] };
@@ -38,8 +39,11 @@ export default function Apartments() {
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Apartamentos</h2>
+    <>
+      <NavBar />
+      <div className="container">
+      <div className="panel">
+      <h2 style={{ marginTop: 0 }}>Apartamentos</h2>
       <table>
         <thead>
           <tr>
@@ -60,13 +64,15 @@ export default function Apartments() {
               <td>{a.number}</td>
               <td>{a.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
               <td>
-                <button onClick={() => reserve(a.id)} disabled={a.status !== 0}>Reservar</button>
+                <button className="btn" onClick={() => reserve(a.id)} disabled={a.status !== 0}>Reservar</button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-    </div>
+      </div>
+      </div>
+    </>
   );
 }
 
