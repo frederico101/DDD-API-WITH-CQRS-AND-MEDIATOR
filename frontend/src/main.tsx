@@ -8,11 +8,13 @@ import Apartments from './pages/Apartments'
 import ProtectedRoute from './auth/ProtectedRoute'
 import Clients from './pages/Clients'
 import Sales from './pages/Sales'
+import Reservations from './pages/Reservations'
 
 const router = createBrowserRouter([
   { path: '/login', element: <Login /> },
   { path: '/', element: <ProtectedRoute><Apartments /></ProtectedRoute> },
   { path: '/clients', element: <ProtectedRoute><Clients /></ProtectedRoute> },
+  { path: '/reservations', element: <ProtectedRoute><Reservations /></ProtectedRoute> },
   { path: '/sales', element: <ProtectedRoute><Sales /></ProtectedRoute> },
 ])
 

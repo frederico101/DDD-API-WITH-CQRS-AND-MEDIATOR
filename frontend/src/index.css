@@ -51,8 +51,14 @@ button:focus-visible {
 
 .container { max-width: 960px; margin: 20px auto; padding: 0 16px; }
 .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.toast { position: fixed; right: 20px; bottom: 20px; background: var(--panel); border: 1px solid var(--border); padding: 12px 16px; border-radius: 8px; }
 
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: 10px 8px; border-bottom: 1px solid var(--border); }
 th { text-align: left; color: var(--muted); font-weight: 600; }
 tr:hover td { background: #0b1220; }
+
+.modal__backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modal__content { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; width: 100%; max-width: 520px; }
+.modal__header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.modal__body { padding: 16px; }

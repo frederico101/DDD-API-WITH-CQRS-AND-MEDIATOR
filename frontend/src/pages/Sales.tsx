@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import NavBar from '../components/NavBar';
+import Toast from '../components/Toast';
 
 type Apartment = { id: string; code: string };
 type Client = { id: string; name: string };
@@ -38,6 +39,8 @@ export default function Sales() {
         <div className="panel">
           <h2 style={{ marginTop: 0 }}>Confirmar Venda</h2>
           <form onSubmit={submit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <label>Cliente</label>
+            <label>Apartamento</label>
             <select value={form.clientId} onChange={(e) => setForm({ ...form, clientId: e.target.value })} required>
               <option value="">Selecione o cliente</option>
               {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -46,13 +49,13 @@ export default function Sales() {
               <option value="">Selecione o apartamento</option>
               {apartments.map(a => <option key={a.id} value={a.id}>{a.code}</option>)}
             </select>
-            <input type="number" step="0.01" placeholder="Entrada (R$)" value={form.downPayment} onChange={(e) => setForm({ ...form, downPayment: Number(e.target.value) })} />
-            <input type="number" step="0.01" placeholder="Preço Total (R$)" value={form.totalPrice} onChange={(e) => setForm({ ...form, totalPrice: Number(e.target.value) })} />
+            <input type="number" step="0.01" placeholder="Entrada (R$)" value={form.downPayment || ''} onChange={(e) => setForm({ ...form, downPayment: Number(e.target.value) })} />
+            <input type="number" step="0.01" placeholder="Preço Total (R$)" value={form.totalPrice || ''} onChange={(e) => setForm({ ...form, totalPrice: Number(e.target.value) })} />
             <div>
               <button className="btn" type="submit">Confirmar</button>
             </div>
           </form>
-          {msg && <p style={{ marginTop: 12 }}>{msg}</p>}
+          <Toast message={msg} />
         </div>
       </div>
     </>
