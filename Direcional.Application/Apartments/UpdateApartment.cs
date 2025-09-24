@@ -7,9 +7,9 @@ namespace Direcional.Application.Apartments;
 
 public static class UpdateApartment
 {
-    public record Command(Guid Id, string Code, string Block, int Floor, int Number, decimal Price) : IRequest<Unit>;
+    public record UpdateApartmentCommand(Guid Id, string Code, string Block, int Floor, int Number, decimal Price) : IRequest<Unit>;
 
-    public class Validator : AbstractValidator<Command>
+    public class Validator : AbstractValidator<UpdateApartmentCommand>
     {
         public Validator()
         {
@@ -22,12 +22,12 @@ public static class UpdateApartment
         }
     }
 
-    public class Handler : IRequestHandler<Command, Unit>
+    public class Handler : IRequestHandler<UpdateApartmentCommand, Unit>
     {
         private readonly IAppDbContext _db;
         public Handler(IAppDbContext db) => _db = db;
 
-        public async Task<Unit> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Unit> Handle(UpdateApartmentCommand request, CancellationToken cancellationToken)
         {
             var entity = await _db.Apartments.FirstOrDefaultAsync(a => a.Id == request.Id, cancellationToken)
                          ?? throw new KeyNotFoundException("Apartment not found");

@@ -4,15 +4,16 @@ using Direcional.Domain.Enums;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using MassTransit;
 
 namespace Direcional.Application.Sales;
 
 public static class ConfirmSale
 {
-    public record Command(Guid ClientId, Guid ApartmentId, Guid? ReservationId, decimal DownPayment, decimal TotalPrice) : IRequest<Result>;
-    public record Result(Guid Id);
+    public record ConfirmSaleCommand(Guid ClientId, Guid ApartmentId, Guid? ReservationId, decimal DownPayment, decimal TotalPrice) : IRequest<ConfirmSaleResult>;
+    public record ConfirmSaleResult(Guid Id);
 
-    public class Validator : AbstractValidator<Command>
+    public class Validator : AbstractValidator<ConfirmSaleCommand>
     {
         public Validator()
         {
@@ -23,12 +24,17 @@ public static class ConfirmSale
         }
     }
 
-    public class Handler : IRequestHandler<Command, Result>
+    public class Handler : IRequestHandler<ConfirmSaleCommand, ConfirmSaleResult>
     {
         private readonly IAppDbContext _db;
-        public Handler(IAppDbContext db) => _db = db;
+        private readonly IPublishEndpoint _publisher;
+        public Handler(IAppDbContext db, IPublishEndpoint publisher)
+        {
+            _db = db;
+            _publisher = publisher;
+        }
 
-        public async Task<Result> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<ConfirmSaleResult> Handle(ConfirmSaleCommand request, CancellationToken cancellationToken)
         {
             var apartment = await _db.Apartments.FirstOrDefaultAsync(a => a.Id == request.ApartmentId, cancellationToken)
                             ?? throw new KeyNotFoundException("Apartment not found");
@@ -57,9 +63,12 @@ public static class ConfirmSale
             if (reservation is not null) reservation.ConfirmedAsSale = true;
 
             await _db.SaveChangesAsync(cancellationToken);
-            return new Result(sale.Id);
+            await _publisher.Publish(new SaleConfirmed(sale.Id, sale.ClientId, sale.ApartmentId, sale.TotalPrice, sale.DownPayment), cancellationToken);
+            return new ConfirmSaleResult(sale.Id);
         }
     }
 }
+
+public record SaleConfirmed(Guid SaleId, Guid ClientId, Guid ApartmentId, decimal TotalPrice, decimal DownPayment);
 
 

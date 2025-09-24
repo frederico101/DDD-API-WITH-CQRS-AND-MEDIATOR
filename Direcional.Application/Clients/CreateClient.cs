@@ -8,10 +8,10 @@ namespace Direcional.Application.Clients;
 
 public static class CreateClient
 {
-    public record Command(string Name, string Email, string Document, string? Phone) : IRequest<Result>;
-    public record Result(Guid Id);
+    public record CreateClientCommand(string Name, string Email, string Document, string? Phone) : IRequest<CreateClientResult>;
+    public record CreateClientResult(Guid Id);
 
-    public class Validator : AbstractValidator<Command>
+    public class Validator : AbstractValidator<CreateClientCommand>
     {
         public Validator()
         {
@@ -22,12 +22,12 @@ public static class CreateClient
         }
     }
 
-    public class Handler : IRequestHandler<Command, Result>
+    public class Handler : IRequestHandler<CreateClientCommand, CreateClientResult>
     {
         private readonly IAppDbContext _db;
         public Handler(IAppDbContext db) => _db = db;
 
-        public async Task<Result> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<CreateClientResult> Handle(CreateClientCommand request, CancellationToken cancellationToken)
         {
             var exists = await _db.Clients.AnyAsync(c => c.Email == request.Email || c.Document == request.Document, cancellationToken);
             if (exists) throw new InvalidOperationException("Client with same email or document already exists");
@@ -43,7 +43,7 @@ public static class CreateClient
 
             _db.Clients.Add(entity);
             await _db.SaveChangesAsync(cancellationToken);
-            return new Result(entity.Id);
+            return new CreateClientResult(entity.Id);
         }
     }
 }

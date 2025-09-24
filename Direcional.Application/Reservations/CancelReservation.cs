@@ -7,14 +7,14 @@ namespace Direcional.Application.Reservations;
 
 public static class CancelReservation
 {
-    public record Command(Guid ReservationId) : IRequest<Unit>;
+    public record CancelReservationCommand(Guid ReservationId) : IRequest<Unit>;
 
-    public class Handler : IRequestHandler<Command, Unit>
+    public class Handler : IRequestHandler<CancelReservationCommand, Unit>
     {
         private readonly IAppDbContext _db;
         public Handler(IAppDbContext db) => _db = db;
 
-        public async Task<Unit> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Unit> Handle(CancelReservationCommand request, CancellationToken cancellationToken)
         {
             var reservation = await _db.Reservations.FirstOrDefaultAsync(r => r.Id == request.ReservationId, cancellationToken)
                                ?? throw new KeyNotFoundException("Reservation not found");

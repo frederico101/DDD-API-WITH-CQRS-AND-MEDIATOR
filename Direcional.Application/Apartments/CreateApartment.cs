@@ -9,10 +9,10 @@ namespace Direcional.Application.Apartments;
 
 public static class CreateApartment
 {
-    public record Command(string Code, string Block, int Floor, int Number, decimal Price) : IRequest<Result>;
-    public record Result(Guid Id);
+    public record CreateApartmentCommand(string Code, string Block, int Floor, int Number, decimal Price) : IRequest<CreateApartmentResult>;
+    public record CreateApartmentResult(Guid Id);
 
-    public class Validator : AbstractValidator<Command>
+    public class Validator : AbstractValidator<CreateApartmentCommand>
     {
         public Validator()
         {
@@ -24,12 +24,12 @@ public static class CreateApartment
         }
     }
 
-    public class Handler : IRequestHandler<Command, Result>
+    public class Handler : IRequestHandler<CreateApartmentCommand, CreateApartmentResult>
     {
         private readonly IAppDbContext _db;
         public Handler(IAppDbContext db) => _db = db;
 
-        public async Task<Result> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<CreateApartmentResult> Handle(CreateApartmentCommand request, CancellationToken cancellationToken)
         {
             if (await _db.Apartments.AnyAsync(a => a.Code == request.Code, cancellationToken))
                 throw new InvalidOperationException("Apartment code already exists");
@@ -47,7 +47,7 @@ public static class CreateApartment
 
             _db.Apartments.Add(entity);
             await _db.SaveChangesAsync(cancellationToken);
-            return new Result(entity.Id);
+            return new CreateApartmentResult(entity.Id);
         }
     }
 }
