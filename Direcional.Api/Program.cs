@@ -79,14 +79,17 @@ app.UseSerilogRequestLogging();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Auto-apply EF Core migrations at startup (dev/test convenience)
-using (var scope = app.Services.CreateScope())
+// Auto-apply EF Core migrations at startup (skip in Testing)
+if (!app.Environment.IsEnvironment("Testing"))
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
-    Seed.SeedAdminUser(db);
-    Seed.SeedApartments(db);
-    Seed.SeedDefaultClient(db);
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        db.Database.Migrate();
+        Seed.SeedAdminUser(db);
+        Seed.SeedApartments(db);
+        Seed.SeedDefaultClient(db);
+    }
 }
 
 app.MapGet("/", () => Results.Ok(new { name = "Direcional API", status = "running" }));
@@ -105,3 +108,5 @@ app.MapPost("/dev/seed", (AppDbContext db) =>
 }).RequireAuthorization().WithTags("Dev").WithOpenApi();
 
 app.Run();
+
+public partial class Program { }

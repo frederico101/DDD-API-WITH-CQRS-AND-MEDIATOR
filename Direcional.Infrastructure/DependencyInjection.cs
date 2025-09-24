@@ -2,6 +2,7 @@ using Direcional.Application.Abstractions;
 using Direcional.Infrastructure.Persistence;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,7 +16,15 @@ public static class DependencyInjection
 
         services.AddDbContext<AppDbContext>(options =>
         {
-            options.UseSqlServer(connectionString);
+            var env = configuration["ASPNETCORE_ENVIRONMENT"];
+            if (string.Equals(env, "Testing", StringComparison.OrdinalIgnoreCase))
+            {
+                options.UseInMemoryDatabase("TestDb");
+            }
+            else
+            {
+                options.UseSqlServer(connectionString);
+            }
         });
 
         services.AddHealthChecks();

@@ -8,6 +8,22 @@ Serviços via Docker Compose:
 - RabbitMQ (management em `http://localhost:15672`)
 - API em `http://localhost:8080`
 
+### Arquitetura e Estrutura
+- Camadas (DDD/CQRS):
+  - `Direcional.Domain`: entidades, enums.
+  - `Direcional.Application`: casos de uso (Commands/Queries via MediatR), validações (FluentValidation), contratos de contexto.
+  - `Direcional.Infrastructure`: EF Core (DbContext, configurations, migrations), integração MassTransit/RabbitMQ, DI.
+  - `Direcional.Api`: endpoints mínimos (Swagger, JWT, Serilog).
+  - `Direcional.Tests`: testes unitários e de integração.
+- Padrões:
+  - CQRS com MediatR (Handlers por feature: Clients, Apartments, Reservations, Sales)
+  - EDD: publicação de eventos `ReservationCreated`, `SaleConfirmed` no RabbitMQ
+  - Mapeamentos EF Core por configuração (Fluent API)
+  - ProblemDetails, HealthChecks prontos para extensão
+
+### Tecnologias
+- .NET 9, EF Core 9, MediatR, MassTransit, RabbitMQ, Serilog, Swagger, FluentValidation, Mapster, xUnit
+
 ### Requisitos
 - Docker e Docker Compose instalados
 
@@ -36,6 +52,10 @@ Resposta:
 }
 ```
 Use o token em Authorization: `Bearer <JWT>` no Swagger (Authorize) e em todas as requisições protegidas.
+
+Importante: a chave JWT (HS256) deve ter pelo menos 256 bits (≥ 32 caracteres). Configure via:
+- `Direcional.Api/appsettings.json` → `Jwt:Key`
+- ou variável de ambiente Docker `Jwt__Key`.
 
 ### Dados iniciais (seed)
 - Usuário admin (admin/admin123)
@@ -106,6 +126,19 @@ Como observar:
 Opcional (inspeção manual de mensagens):
 - É possível criar uma fila “audit” no RabbitMQ UI e bindar ao exchange do tipo de mensagem para reter mensagens sem consumidor, só para ver o teor das mensagens e verificar a conexão.
 
+### Testes (unitários e BDD)
+- Ambiente de testes usa EF Core InMemory e MassTransit InMemory automaticamente quando `ASPNETCORE_ENVIRONMENT=Testing`.
+- Rodar testes localmente (sem depender do SDK instalado) usando container .NET 9:
+```bash
+docker run --rm \
+  -v "$PWD":/workspace -w /workspace \
+  -e ASPNETCORE_ENVIRONMENT=Testing \
+  mcr.microsoft.com/dotnet/sdk:9.0 dotnet test
+```
+- Cobertura (exemplos já inclusos):
+  - Unit: geração de JWT, reserva publica evento e muda status, venda confirma e muda status
+  - Integração (BDD-like): login → criar apartamento → criar reserva; login → criar apartamento → confirmar venda
+
 ### Healthchecks
 - (Base prontos para adicionar) Via ASP.NET HealthChecks e Docker. Pode-se expor `/health` se necessário.
 
@@ -117,8 +150,38 @@ Opcional (inspeção manual de mensagens):
 dotnet run --project Direcional.Api
 ```
 
-### Testes (opcional)
-- Estrutura preparada para adicionar xUnit/NUnit. Sugestão: cobrir login, CRUD básico e reserva/venda.
+### Exemplos de requisições (curl)
+```bash
+# Login
+curl -s -X POST http://localhost:8080/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"admin123"}'
+
+# Listar apartamentos (autenticado)
+TOKEN="<JWT>"
+curl -s "http://localhost:8080/apartments?page=1&pageSize=5" \
+  -H "Authorization: Bearer $TOKEN"
+
+# Criar cliente
+curl -s -X POST http://localhost:8080/clients \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"John","email":"john@example.com","document":"123","phone":"+55 11 99999-9999"}'
+
+# Criar apartamento
+curl -s -X POST http://localhost:8080/apartments \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"code":"C-301","block":"C","floor":3,"number":301,"price":420000}'
+
+# Criar reserva
+curl -s -X POST http://localhost:8080/reservations \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"clientId":"<clientId>","apartmentId":"<apartmentId>","expiresHours":24}'
+
+# Confirmar venda
+curl -s -X POST http://localhost:8080/sales \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"clientId":"<clientId>","apartmentId":"<apartmentId>","downPayment":10000,"totalPrice":420000}'
+```
 
 ### Decisões técnicas
 - .NET 9
