@@ -64,5 +64,6 @@ using (var scope = app.Services.CreateScope())
 
 app.MapGet("/", () => Results.Ok(new { name = "Direcional API", status = "running" }));
 Direcional.Api.Endpoints.AuthEndpoints.MapAuth(app);
+Direcional.Api.Endpoints.ClientEndpoints.MapClients(app);
 
 app.Run();
