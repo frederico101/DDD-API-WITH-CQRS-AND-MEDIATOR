@@ -40,4 +40,17 @@ services:
     ports:
       - "8080:8080"
 
+  frontend:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    environment:
+      - VITE_PROXY_TARGET=http://api:8080
+    command: sh -c "npm ci || npm i && npm run dev -- --host --port 5173"
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
 
