@@ -14,6 +14,8 @@
     <PackageReference Include="FluentAssertions" Version="6.*" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.*" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.*" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.*" />
     <PackageReference Include="NSubstitute" Version="5.*" />
     <PackageReference Include="xunit" Version="2.5.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
@@ -21,6 +23,13 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Direcional.Application\Direcional.Application.csproj" />
+    <ProjectReference Include="..\Direcional.Infrastructure\Direcional.Infrastructure.csproj" />
+    <ProjectReference Include="..\Direcional.Domain\Direcional.Domain.csproj" />
+    <ProjectReference Include="..\Direcional.Api\Direcional.Api.csproj" />
   </ItemGroup>
 
 </Project>
