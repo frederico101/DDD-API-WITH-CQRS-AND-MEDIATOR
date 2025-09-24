@@ -4,6 +4,7 @@ import NavBar from '../components/NavBar';
 import Modal from '../components/Modal';
 
 type Apartment = { id: string; code: string; block: string; floor: number; number: number; price: number; status: number };
+type Reservation = { id: string; clientId: string; clientName: string; apartmentId: string; apartmentCode: string; expiresAtUtc?: string; confirmedAsSale: boolean };
 type Paged<T> = { total: number; items: T[] };
 
 export default function Apartments() {
@@ -15,12 +16,18 @@ export default function Apartments() {
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
   const [toast, setToast] = useState<string | undefined>();
   const [clientId, setClientId] = useState('');
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [hoveredApartmentId, setHoveredApartmentId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await api.get<Paged<Apartment>>('/apartments', { params: { page: 1, pageSize: 20 } });
-        setData(data);
+        const [apartmentsRes, reservationsRes] = await Promise.all([
+          api.get<Paged<Apartment>>('/apartments', { params: { page: 1, pageSize: 20 } }),
+          api.get<Paged<Reservation>>('/reservations', { params: { page: 1, pageSize: 50 } })
+        ]);
+        setData(apartmentsRes.data);
+        setReservations(reservationsRes.data.items);
       } catch (e: any) {
         setError(e?.response?.data?.detail || 'Erro ao carregar');
       } finally {
@@ -43,9 +50,21 @@ export default function Apartments() {
       await api.post('/reservations', { clientId, apartmentId: selected.id, expiresHours: 24 });
       setOpen(false);
       setToast('Reserva criada!');
+      
+      // Refresh data
+      const [apartmentsRes, reservationsRes] = await Promise.all([
+        api.get<Paged<Apartment>>('/apartments', { params: { page: 1, pageSize: 20 } }),
+        api.get<Paged<Reservation>>('/reservations', { params: { page: 1, pageSize: 50 } })
+      ]);
+      setData(apartmentsRes.data);
+      setReservations(reservationsRes.data.items);
     } catch (e: any) {
       setToast(e?.response?.data?.detail || 'Erro ao reservar');
     }
+  };
+
+  const getReservationForApartment = (apartmentId: string) => {
+    return reservations.find(r => r.apartmentId === apartmentId && !r.confirmedAsSale);
   };
 
   if (loading) return <p>Carregando...</p>;
@@ -77,7 +96,36 @@ export default function Apartments() {
               <td>{a.number}</td>
               <td>{a.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
               <td>
-                <button className="btn" onClick={() => openReserve(a)} disabled={a.status !== 0}>Reservar</button>
+                {a.status === 0 && (
+                  <button className="btn" onClick={() => openReserve(a)}>Reservar</button>
+                )}
+                {a.status === 1 && (
+                  <div 
+                    className="tooltip-container"
+                    onMouseEnter={() => setHoveredApartmentId(a.id)}
+                    onMouseLeave={() => setHoveredApartmentId(null)}
+                  >
+                    <button className="btn btn--secondary" disabled>Reservado</button>
+                    {hoveredApartmentId === a.id && (
+                      <div className="tooltip">
+                        {(() => {
+                          const reservation = getReservationForApartment(a.id);
+                          return reservation ? (
+                            <>
+                              <strong>Cliente:</strong> {reservation.clientName}<br/>
+                              <strong>Expira em:</strong> {reservation.expiresAtUtc ? new Date(reservation.expiresAtUtc).toLocaleString('pt-BR') : 'Não definido'}
+                            </>
+                          ) : (
+                            'Detalhes não disponíveis'
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {a.status === 2 && (
+                  <button className="btn btn--success" disabled>Vendido</button>
+                )}
               </td>
             </tr>
           ))}

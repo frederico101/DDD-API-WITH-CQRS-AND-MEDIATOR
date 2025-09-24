@@ -7,6 +7,7 @@ Serviços via Docker Compose:
 - SQL Server Express (banco DirecionalDb)
 - RabbitMQ (management em `http://localhost:15672`)
 - API em `http://localhost:8080`
+- Frontend React em `http://localhost:5173`
 
 ### Arquitetura e Estrutura
 - Camadas (DDD/CQRS):
@@ -33,6 +34,7 @@ docker compose up -d --build
 ```
 
 - Acesse Swagger: `http://localhost:8080/swagger`
+- Frontend React: `http://localhost:5173`
 - RabbitMQ UI: `http://localhost:15672` (user: guest / pass: guest)
 
 ### Autenticação (JWT)
@@ -56,6 +58,20 @@ Use o token em Authorization: `Bearer <JWT>` no Swagger (Authorize) e em todas a
 Importante: a chave JWT (HS256) deve ter pelo menos 256 bits (≥ 32 caracteres). Configure via:
 - `Direcional.Api/appsettings.json` → `Jwt:Key`
 - ou variável de ambiente Docker `Jwt__Key`.
+
+### Interface Frontend (React)
+O frontend React oferece uma interface intuitiva para gerenciar apartamentos, clientes, reservas e vendas.
+
+#### Estados dos Botões de Reserva
+Os apartamentos exibem diferentes estados visuais baseados em seu status:
+
+- 🔵 **"Reservar"** - Apartamentos disponíveis (clicável)
+- ⚫ **"Reservado"** - Apartamentos reservados (desabilitado, cinza)
+- 🟢 **"Vendido"** - Apartamentos vendidos (desabilitado, verde)
+
+Os botões mudam automaticamente de estado quando:
+- Uma reserva é criada (disponível → reservado)
+- Uma venda é confirmada (reservado → vendido)
 
 ### Dados iniciais (seed)
 - Usuário admin (admin/admin123)

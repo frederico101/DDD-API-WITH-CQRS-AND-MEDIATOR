@@ -42,7 +42,7 @@ export default function Clients() {
       <NavBar />
       <div className="container">
         <div className="panel">
-          <h2 style={{ marginTop: 0 }}>Clientes</h2>
+          <h2 style={{ marginTop: 0 }}>Cadastro de Clientes</h2>
           <form onSubmit={submit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
             <input placeholder="Nome" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             <input placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
