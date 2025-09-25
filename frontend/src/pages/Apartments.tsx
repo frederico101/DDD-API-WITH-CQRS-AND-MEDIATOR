@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import NavBar from '../components/NavBar';
 import Modal from '../components/Modal';
+import { TableSkeleton } from '../components/Skeleton';
+import ApartmentImage from '../components/ApartmentImage';
 
 type Apartment = { id: string; code: string; block: string; floor: number; number: number; price: number; status: number };
 type Reservation = { id: string; clientId: string; clientName: string; apartmentId: string; apartmentCode: string; expiresAtUtc?: string; confirmedAsSale: boolean };
@@ -67,7 +69,20 @@ export default function Apartments() {
     return reservations.find(r => r.apartmentId === apartmentId && !r.confirmedAsSale);
   };
 
-  if (loading) return <p>Carregando...</p>;
+  if (loading) {
+    return (
+      <>
+        <NavBar />
+        <div className="container">
+          <div className="panel">
+            <h2 style={{ marginTop: 0 }}>Apartamentos</h2>
+            <TableSkeleton rows={8} />
+          </div>
+        </div>
+      </>
+    );
+  }
+
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
   return (
@@ -79,6 +94,7 @@ export default function Apartments() {
       <table>
         <thead>
           <tr>
+            <th>Imagem</th>
             <th>Código</th>
             <th>Bloco</th>
             <th>Andar</th>
@@ -90,6 +106,7 @@ export default function Apartments() {
         <tbody>
           {data.items.map((a) => (
             <tr key={a.id}>
+              <td><ApartmentImage apartmentCode={a.code} size="small" /></td>
               <td>{a.code}</td>
               <td>{a.block}</td>
               <td>{a.floor}</td>

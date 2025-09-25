@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import NavBar from '../components/NavBar';
+import { TableSkeleton } from '../components/Skeleton';
 
 type Client = { id: string; name: string; email: string; document: string; phone: string };
 type Paged<T> = { total: number; items: T[] };
@@ -53,7 +54,7 @@ export default function Clients() {
             </div>
           </form>
           {error && <p style={{ color: 'salmon' }}>{error}</p>}
-          {loading ? <p>Carregando...</p> : (
+          {loading ? <TableSkeleton rows={5} /> : (
             <table>
               <thead>
                 <tr>

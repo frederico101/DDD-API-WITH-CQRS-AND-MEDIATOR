@@ -1,4 +1,5 @@
 using Direcional.Application.Apartments;
+using Direcional.Api.Contracts;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 
@@ -6,14 +7,11 @@ namespace Direcional.Api.Endpoints;
 
 public static class ApartmentEndpoints
 {
-    public record ApartmentCreateRequest(string Code, string Block, int Floor, int Number, decimal Price);
-    public record ApartmentUpdateRequest(string Code, string Block, int Floor, int Number, decimal Price);
-
     public static IEndpointRouteBuilder MapApartments(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/apartments").RequireAuthorization();
 
-        group.MapGet("/", async (int page, int pageSize, string? search, ISender sender) =>
+        group.MapGet("/", async (ISender sender, int page = 1, int pageSize = 10, string? search = null) =>
         {
             var result = await sender.Send(new GetApartments.Query(page, pageSize, search));
             return Results.Ok(result);
