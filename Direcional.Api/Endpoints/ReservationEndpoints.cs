@@ -10,7 +10,7 @@ public static class ReservationEndpoints
     {
         var group = app.MapGroup("/reservations").RequireAuthorization();
 
-        group.MapGet("/", async (int page, int pageSize, ISender sender) =>
+        group.MapGet("/", async (ISender sender, int page = 1, int pageSize = 50) =>
         {
             var result = await sender.Send(new GetReservations.Query(page, pageSize));
             return Results.Ok(result);

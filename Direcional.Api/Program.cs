@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using BCrypt.Net;
 using Direcional.Domain.Entities;
 using Microsoft.OpenApi.Models;
+using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,12 +21,19 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Direcional API", Version = "v1" });
+
     // Avoid schema ID collisions for record types like Command/Result across features
     c.CustomSchemaIds(t =>
     {
         var full = t.FullName ?? t.Name;
         return full.Replace('.', '_').Replace('+', '_');
     });
+
+    // Exclude OPTIONS methods from Swagger documentation (safe null check)
+    c.DocInclusionPredicate((docName, apiDesc) =>
+        !string.Equals(apiDesc.HttpMethod, "OPTIONS", StringComparison.OrdinalIgnoreCase));
+
+    // Security scheme
     var securityScheme = new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -36,10 +44,19 @@ builder.Services.AddSwaggerGen(c =>
         BearerFormat = "JWT",
         Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
     };
+
     c.AddSecurityDefinition("Bearer", securityScheme);
+
+    // Correctly reference scheme in requirement
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
-        { securityScheme, new string[] { } }
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
     });
 });
 
@@ -62,16 +79,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]!))
         };
     });
+
 builder.Services.AddAuthorization();
 
-// CORS for frontend
-const string CorsPolicy = "Frontend";
+// Simple CORS for Docker environment
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(CorsPolicy, p => p
-        .AllowAnyOrigin()
-        .AllowAnyHeader()
-        .AllowAnyMethod());
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+// Disable automatic OPTIONS endpoint creation
+builder.Services.Configure<Microsoft.AspNetCore.Routing.RouteOptions>(options =>
+{
+    options.SuppressCheckForUnhandledSecurityMetadata = true;
 });
 
 builder.Services.AddMediatR(typeof(Direcional.Application.Abstractions.IAppDbContext).Assembly);
@@ -82,70 +107,50 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Direcional API v1");
+        c.RoutePrefix = "swagger";
+        c.DocumentTitle = "Direcional API";
+    });
 }
 
 app.UseSerilogRequestLogging();
-// CORS must run before auth so 401 responses include CORS headers
-app.UseCors(CorsPolicy);
-
-// Harden preflight handling: respond 200 with CORS headers for any OPTIONS
-app.Use(async (context, next) =>
-{
-    if (string.Equals(context.Request.Method, "OPTIONS", StringComparison.OrdinalIgnoreCase))
-    {
-        var origin = context.Request.Headers["Origin"].ToString();
-        if (!string.IsNullOrEmpty(origin))
-        {
-            context.Response.Headers["Access-Control-Allow-Origin"] = origin;
-            context.Response.Headers["Vary"] = "Origin";
-        }
-        else
-        {
-            context.Response.Headers["Access-Control-Allow-Origin"] = "*";
-        }
-        var reqHeaders = context.Request.Headers["Access-Control-Request-Headers"].ToString();
-        var reqMethod = context.Request.Headers["Access-Control-Request-Method"].ToString();
-        context.Response.Headers["Access-Control-Allow-Headers"] = string.IsNullOrEmpty(reqHeaders) ? "*" : reqHeaders;
-        context.Response.Headers["Access-Control-Allow-Methods"] = string.IsNullOrEmpty(reqMethod) ? "GET,POST,PUT,DELETE,OPTIONS" : reqMethod;
-        context.Response.StatusCode = StatusCodes.Status200OK;
-        await context.Response.CompleteAsync();
-        return;
-    }
-    await next();
-});
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Serve static files if you have wwwroot content (can be removed if not needed)
+// Enable static files (Swagger UI assets are included by Swashbuckle's embedded file provider)
+app.UseStaticFiles();
 
 // Auto-apply EF Core migrations at startup (skip in Testing)
 if (!app.Environment.IsEnvironment("Testing"))
 {
-    using (var scope = app.Services.CreateScope())
+    try
     {
+        using var scope = app.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         db.Database.Migrate();
         Seed.SeedAdminUser(db);
         Seed.SeedApartments(db);
         Seed.SeedDefaultClient(db);
     }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "Database migration/seed failed at startup");
+    }
 }
 
 app.MapGet("/", () => Results.Ok(new { name = "Direcional API", status = "running" }));
+
+// CORS will handle OPTIONS requests automatically
+
 Direcional.Api.Endpoints.AuthEndpoints.MapAuth(app);
 Direcional.Api.Endpoints.ClientEndpoints.MapClients(app);
 Direcional.Api.Endpoints.ApartmentEndpoints.MapApartments(app);
 Direcional.Api.Endpoints.ReservationEndpoints.MapReservations(app);
 Direcional.Api.Endpoints.SaleEndpoints.MapSales(app);
-
-// Handle CORS preflight (OPTIONS) for all routes
-app.MapMethods("/{**any}", new[] { "OPTIONS" }, () => Results.Ok())
-   .AllowAnonymous()
-   .RequireCors(CorsPolicy);
-
-// Explicit preflight for login to avoid 405 from route matching
-app.MapMethods("/auth/login", new[] { "OPTIONS" }, () => Results.Ok())
-   .AllowAnonymous()
-   .RequireCors(CorsPolicy);
 
 // Dev-only: trigger data seed (requires auth)
 app.MapPost("/dev/seed", (AppDbContext db) =>
