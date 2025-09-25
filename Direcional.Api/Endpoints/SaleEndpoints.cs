@@ -10,6 +10,14 @@ public static class SaleEndpoints
     {
         var group = app.MapGroup("/sales").RequireAuthorization();
 
+        group.MapGet("/", async (int page, int pageSize, ISender sender) =>
+        {
+            var result = await sender.Send(new GetSales.Query(page, pageSize));
+            return Results.Ok(result);
+        })
+        .WithTags("Sales")
+        .WithOpenApi();
+
         group.MapPost("/", async (ConfirmSale.ConfirmSaleCommand cmd, ISender sender) =>
         {
             var result = await sender.Send(cmd);

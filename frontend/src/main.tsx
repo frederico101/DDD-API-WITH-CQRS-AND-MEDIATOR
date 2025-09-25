@@ -4,6 +4,7 @@ import './index.css'
 import { AuthProvider } from './auth/AuthContext'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import Login from './pages/Login'
+import Dashboard from './pages/Dashboard'
 import Apartments from './pages/Apartments'
 import ProtectedRoute from './auth/ProtectedRoute'
 import Clients from './pages/Clients'
@@ -12,7 +13,9 @@ import Reservations from './pages/Reservations'
 
 const router = createBrowserRouter([
   { path: '/login', element: <Login /> },
-  { path: '/', element: <ProtectedRoute><Apartments /></ProtectedRoute> },
+  { path: '/', element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
+  { path: '/dashboard', element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
+  { path: '/apartments', element: <ProtectedRoute><Apartments /></ProtectedRoute> },
   { path: '/clients', element: <ProtectedRoute><Clients /></ProtectedRoute> },
   { path: '/reservations', element: <ProtectedRoute><Reservations /></ProtectedRoute> },
   { path: '/sales', element: <ProtectedRoute><Sales /></ProtectedRoute> },

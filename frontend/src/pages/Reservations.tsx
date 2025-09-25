@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import NavBar from '../components/NavBar';
 import Modal from '../components/Modal';
+import { TableSkeleton } from '../components/Skeleton';
 
 type Reservation = {
   id: string;
@@ -74,7 +75,7 @@ export default function Reservations() {
       <div className="container">
         <div className="panel">
           <h2 style={{ marginTop: 0 }}>Reservas</h2>
-          {loading ? <p>Carregando...</p> : error ? <p style={{ color: 'salmon' }}>{error}</p> : (
+          {loading ? <TableSkeleton rows={5} /> : error ? <p style={{ color: 'salmon' }}>{error}</p> : (
             <table>
               <thead>
                 <tr>
